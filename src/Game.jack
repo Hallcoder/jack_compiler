@@ -12,7 +12,7 @@ class Game{
     method void startGame(){
         do Output.moveCursor(0,0);
         do Output.printString("Score: 0");
-        do ball.moveBall();   
+        do ball.moveBall();
       return;
     }
 

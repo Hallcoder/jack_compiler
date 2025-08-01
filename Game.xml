@@ -1,0 +1,87 @@
+<class>
+	<keyword>class</keyword>
+	<identifier>Game</identifier>
+	<symbol>{</symbol>
+<classVarDec>
+	<keyword>field</keyword>
+	<keyword>Ball</keyword>
+	<identifier>ball</identifier>
+	<symbol>;</symbol>
+</classVarDec>
+<classVarDec>
+	<keyword>field</keyword>
+	<keyword>Line_board</keyword>
+	<identifier>board</identifier>
+	<symbol>;</symbol>
+</classVarDec>
+<classVarDec>
+	<keyword>field</keyword>
+	<keyword>int</keyword>
+	<identifier>score</identifier>
+	<symbol>;</symbol>
+</classVarDec>
+<classVarDec>
+	<keyword>field</keyword>
+	<keyword>int</keyword>
+	<identifier>key</identifier>
+	<symbol>;</symbol>
+</classVarDec>
+<subroutineDec>
+	<keyword>constructor</keyword>
+	<keyword>Game</keyword>
+	<identifier>new</identifier>
+	<symbol>(</symbol>
+<paramaterList>
+	<identifier>Ball</identifier>
+	<identifier>ballY</identifier>
+	<symbol>,</symbol>
+	<identifier>Line_board</identifier>
+	<identifier>lineX</identifier>
+	</paramaterList>
+	<symbol>)</symbol>
+	<subroutineBody></subroutineBody></subroutineDec>
+<subroutineDec>
+	<keyword>let</keyword>
+	<keyword>board</keyword>
+	<identifier>=</identifier>
+	<symbol>lineX</symbol>
+<paramaterList>
+	<identifier>;</identifier>
+	<identifier>return</identifier>
+	</paramaterList>
+	<symbol>this</symbol>
+	<subroutineBody></subroutineBody></subroutineDec>
+<subroutineDec>
+	<keyword>)</keyword>
+	<keyword>{</keyword>
+	<identifier>do</identifier>
+	<symbol>Output</symbol>
+<paramaterList>
+	<identifier>.</identifier>
+	<identifier>moveCursor</identifier>
+	</paramaterList>
+	<symbol>(</symbol>
+	<subroutineBody></subroutineBody></subroutineDec>
+<subroutineDec>
+	<keyword>Output</keyword>
+	<keyword>.</keyword>
+	<identifier>printString</identifier>
+	<symbol>(</symbol>
+<paramaterList>
+	<identifier>Score: 0</identifier>
+	<identifier>);</identifier>
+	</paramaterList>
+	<symbol>do</symbol>
+	<subroutineBody></subroutineBody></subroutineDec>
+<subroutineDec>
+	<keyword>return</keyword>
+	<keyword>;</keyword>
+	<identifier>}</identifier>
+	<symbol>method</symbol>
+<paramaterList>
+	<identifier>void</identifier>
+	<identifier>writeScore</identifier>
+	</paramaterList>
+	<symbol>(</symbol>
+	<subroutineBody></subroutineBody></subroutineDec>
+}</class>

@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class JackTokenizer {
@@ -26,23 +25,23 @@ public class JackTokenizer {
             Files.lines(inputFile).forEach((line)->{
                 currentLineContent = line;
                 resetPosition();
-                System.out.println("Tokenize line: " + line);
-                System.out.println(currentPosition);
+//                System.out.println("Tokenize line: " + line);
+//                System.out.println(currentPosition);
                 while(currentPosition < currentLineContent.length()) {
                     char  currentChar = line.charAt(currentPosition);
                     switch (currentChar) {
                         case '\n':
-                            System.out.println("Char now is new line:" + currentChar);
+//                            System.out.println("Char now is new line:" + currentChar);
                             nextLine();
                             break;
                         case '\r':
                         case '\t':
                         case ' ':
-                            System.out.println("Char now is space like:" + currentChar);
+//                            System.out.println("Char now is space like:" + currentChar);
                             advance();
                             break;
                         case '"':
-                            System.out.println("Char now is start of string:" + currentChar);
+//                            System.out.println("Char now is start of string:" + currentChar);
                             scanString();
                             break;
                         // JACK symbols
@@ -65,12 +64,12 @@ public class JackTokenizer {
                         case '>':
                         case '=':
                         case '~':
-                            System.out.println("Char now is symbol:" + currentChar);
+//                            System.out.println("Char now is symbol:" + currentChar);
                             advance();
                             scanSymbol();
                             break;
                         default:
-                            System.out.println("Char now is either number, keyword or identifier:" + currentChar);
+//                            System.out.println("Char now is either number, keyword or identifier:" + currentChar);
                             if (Character.isLetter(currentChar) || currentChar == '_') {
                                 scanKeywordOrIdentifier(); // Use keyword as placeholder but the logic will help differentiate
                             } else if (Character.isDigit(currentChar)) {
@@ -89,7 +88,7 @@ public class JackTokenizer {
     }
     private void advance(){
         currentPosition++;
-        System.out.println("Advancing position: " + currentPosition);
+//        System.out.println("Advancing position: " + currentPosition);
     }
 
     private void resetPosition(){
@@ -103,13 +102,14 @@ public class JackTokenizer {
         currentLine++;
         currentLineContent = "";
         resetPosition();
-        System.out.println("Next line: " + currentLine);
+//        System.out.println("Next line: " + currentLine);
     }
     private void scanSymbol() {
         //symbol, keyword, identifier, literal(number, string)
         //Process : first filter out symbols, next keywords, next identifier, then finally check if it's a number(starts with a digit)
         // or if it's a string constant(starts with quotes)
-        tokens.add(new Token(TokenType.SYMBOL, String.valueOf(currentLineContent.charAt(currentPosition-1))));
+        String tokenValue  = String.valueOf(currentLineContent.charAt(currentPosition-1));
+        tokens.add(new Token(TokenType.SYMBOL, tokenValue,JackConstants.starts_non_terminal(tokenValue)));
     }
     public char peek(){
         if(currentPosition > currentLineContent.length()){
@@ -130,11 +130,11 @@ public class JackTokenizer {
           }
       }
       if(JackConstants.isKeyword(tokenValue.toString())){
-          System.out.println("Adding keyword: " + tokenValue);
-          tokens.add(new Token(TokenType.KEYWORD, tokenValue.toString()));
+//          System.out.println("Adding keyword: " + tokenValue);
+          tokens.add(new Token(TokenType.KEYWORD, tokenValue.toString(),JackConstants.starts_non_terminal(tokenValue.toString())));
       }else{
-          System.out.println("Adding identifier: " + tokenValue);
-          tokens.add(new Token(TokenType.IDENTIFIER, tokenValue.toString()));
+//          System.out.println("Adding identifier: " + tokenValue);
+          tokens.add(new Token(TokenType.IDENTIFIER, tokenValue.toString(),JackConstants.starts_non_terminal(tokenValue.toString())));
       }
     }
     private void scanNumber(){
@@ -142,7 +142,7 @@ public class JackTokenizer {
      StringBuilder tokenValue = new StringBuilder();
      while(i<currentLineContent.length()) {
          if(Character.isDigit(currentLineContent.charAt(i))) {
-             System.out.println("appending character:"+currentLineContent.charAt(i));
+//             System.out.println("appending character:"+currentLineContent.charAt(i));
              tokenValue.append(currentLineContent.charAt(i));
              i++;
              advance();
@@ -150,7 +150,7 @@ public class JackTokenizer {
              break;
          }
       }
-     tokens.add(new Token(TokenType.NUMBER_CONSTANT, tokenValue.toString()));
+     tokens.add(new Token(TokenType.NUMBER_CONSTANT, tokenValue.toString(),JackConstants.starts_non_terminal(tokenValue.toString())));
     }
 
     private void scanString(){
@@ -162,9 +162,10 @@ public class JackTokenizer {
                 break;
             }
             tokenValue.append(c);
-            System.out.println("appending character:"+c);
+//            System.out.println("appending character:"+c);
             advance();
         }
-        tokens.add(new Token(TokenType.STRING_CONSTANT, tokenValue.toString()));
+        tokens.add(new Token(TokenType.STRING_CONSTANT, tokenValue.toString(),JackConstants.starts_non_terminal(tokenValue.toString())));
     }
+
 }

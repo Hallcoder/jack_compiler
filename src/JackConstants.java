@@ -11,13 +11,12 @@ public class JackConstants {
             "void", "true", "false", "null", "this", "let", "do", "if", "else", "while", "return"
     );
 
+   private static final List<String> start_non_terminals = Arrays.asList("class", "function", "method", "if", "else", "while", "return", "do","field","var");
 
-    public static List<String> getSymbols() {
-        return symbols;
-    }
-    public static List<String> getKeywords() {
-        return keywords;
-    }
+   public static boolean starts_non_terminal(String tokenValue){
+       return  start_non_terminals.contains(tokenValue);
+   }
+
     public static boolean isSymbol(String symbol){
         return symbols.contains(symbol);
     }

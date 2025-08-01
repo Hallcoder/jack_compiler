@@ -1,6 +1,8 @@
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 
@@ -13,11 +15,24 @@ public class JackAnalyzer {
         JackTokenizer tokenizer = new JackTokenizer(inputFile);
         tokenizer.tokenize();
         List<Token> tokens = tokenizer.getTokens();
-        tokens.forEach(Token::toString);
-        System.out.println("=== Done with tokenization ===");
+        tokens.forEach((token) -> {
+            token.print(tokens.indexOf(token));
+        });
         Path outputFile = Paths.get(inputFileName.substring(0, inputFileName.lastIndexOf('.')) + ".xml");
-        CompilationEngine compilationEngine = new CompilationEngine(tokens,outputFile);
-        compilationEngine.compile();
+        if(!Files.exists(outputFile)){
+            Files.createFile(outputFile);
+        }else{
+            Files.writeString(outputFile,"",StandardOpenOption.TRUNCATE_EXISTING);
+        }
+        CompilationEngine compilationEngine = new CompilationEngine(tokens);
+        String code = compilationEngine.compile();
+        System.out.println("Resulting xml:" + code);
+        try {
+            Files.write(outputFile, code.getBytes(), StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("=== Done with tokenization ===");
         System.out.println("Compilation finished. Yaay!");
     }
 }
