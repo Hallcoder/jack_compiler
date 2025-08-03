@@ -4,20 +4,38 @@ import java.util.Objects;
 public class CompilationEngine {
     private List<Token> tokens;
     private int currentIndex = 0;
+    private int indentLevel = 0;
+    private static final String INDENT = "  "; // 2 spaces for indentation
+    
     public CompilationEngine(List<Token> tokens) {
         this.tokens = tokens;
     }
 
     public String compile() {
         return compileClass();
-//        while(hasNext()) {
-//            if (token.isTerminal()) {
-//                return compileNonTerminal();
-//            } else {
-//                currentIndex++;
-//                return "<" + token.getTokenType().getDisplayName() + ">" + token.getToken() + "</" + token.getTokenType().getDisplayName() + ">" + "\n";
-//            }
-//        }
+    }
+
+    private String getIndent() {
+        return INDENT.repeat(indentLevel);
+    }
+    
+    private String formatElement(String tagName, String content) {
+        return getIndent() + "<" + tagName + "> " + content + " </" + tagName + ">\n";
+    }
+    
+    private String openTag(String tagName) {
+        String result = getIndent() + "<" + tagName + ">\n";
+        indentLevel++;
+        return result;
+    }
+    
+    private String closeTag(String tagName) {
+        indentLevel--;
+        return getIndent() + "</" + tagName + ">\n";
+    }
+    
+    private String emptyElement(String tagName) {
+        return getIndent() + "<" + tagName + ">\n" + getIndent() + "</" + tagName + ">\n";
     }
 
     public void advance(){
@@ -29,350 +47,412 @@ public class CompilationEngine {
     }
 
     public String getNextToken(){
-        System.out.println("Getting next token => " + tokens.get(currentIndex).getToken());
-        String tok  =  tokens.get(currentIndex).getToken();
+        String tok = tokens.get(currentIndex).getToken();
         advance();
         return tok;
     }
 
     public String peek(){
-        System.out.println("Peeking at index:"+currentIndex + " found => " + tokens.get(currentIndex).getToken());
         return tokens.get(currentIndex).getToken();
     }
 
     public Token peekToken(){
-        System.out.println("Peeking at index:"+currentIndex);
         return tokens.get(currentIndex);
     }
+    
     public String compileClass() {
-        //class Game{
-        String xml = "<class>\n\t";
-        xml += "<keyword>"+getNextToken()+"</keyword>\n\t<identifier>"+getNextToken()+"</identifier>\n\t<symbol>"+getNextToken()+"</symbol>\n";
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("class"));
+        
+        // class keyword
+        xml.append(formatElement("keyword", getNextToken()));
+        // class name
+        xml.append(formatElement("identifier", getNextToken()));
+        // {
+        xml.append(formatElement("symbol", getNextToken()));
+        
         while(hasNext()) {
-            System.out.println("next token after class Game:"+ peek());
             if (peek().equals("static") || peek().equals("field")) {
-                xml += compileClassVarDec();
-            }else if(peek().equals("method") || peek().equals("function") || peek().equals("constructor")) {
-                System.out.println("Now compiling subroutineDec: "+peek());
-                xml += compileSubroutineDec();
-            }else{
-                //} for class close
-                xml += "<symbol>"+ getNextToken()+ "</symbol>\n</class>";
+                xml.append(compileClassVarDec());
+            } else if(peek().equals("method") || peek().equals("function") || peek().equals("constructor")) {
+                xml.append(compileSubroutineDec());
+            } else {
+                // } for class close
+                xml.append(formatElement("symbol", getNextToken()));
+                break;
             }
         }
-        return xml;
+        
+        xml.append(closeTag("class"));
+        return xml.toString();
     }
 
     public String compileClassVarDec() {
-        //field Ball ball,ball1;
-        StringBuilder xml = new StringBuilder("<classVarDec>\n\t");
-        //field | static
-        xml.append("<keyword>" + getNextToken() + "</keyword>\n\t");
-        //type
-        xml = pushType(xml);
-        //varName
-        xml.append("<identifier>" + getNextToken() + "</identifier>\n\t");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("classVarDec"));
+        
+        // field | static
+        xml.append(formatElement("keyword", getNextToken()));
+        // type
+        xml.append(pushType());
+        // varName
+        xml.append(formatElement("identifier", getNextToken()));
+        
         while(peek().equals(",")){
-            xml.append("<symbol>" + getNextToken() + "</symbol>\n\t");
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+            xml.append(formatElement("symbol", getNextToken()));
+            xml.append(formatElement("identifier", getNextToken()));
         }
-        //;
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n</classVarDec>\n");
+        
+        // ;
+        xml.append(formatElement("symbol", getNextToken()));
+        xml.append(closeTag("classVarDec"));
         return xml.toString();
     }
 
     public String compileSubroutineDec() {
-        //constructor(keyword) Ball(keyword) new(identifier) '('(symbol) parameterList  ')' (symbol) {(symbol)
-        StringBuilder xml = new StringBuilder("<subroutineDec>\n\t");
-        //constructor | method | function
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        //(void | type)
-        xml = pushType(xml);
-        //new(
-        xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t").append("<symbol>").append(getNextToken()).append("</symbol>\n");
-        //parameterList )
-        System.out.println("=== First parameter list ==== "+ peek());
-        xml.append(compileParameterList()).append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        System.out.println("==== Subroutine body now ======");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("subroutineDec"));
+        
+        // constructor | method | function
+        xml.append(formatElement("keyword", getNextToken()));
+        // (void | type)
+        xml.append(pushType());
+        // subroutine name
+        xml.append(formatElement("identifier", getNextToken()));
+        // (
+        xml.append(formatElement("symbol", getNextToken()));
+        // parameterList
+        xml.append(compileParameterList());
+        // )
+        xml.append(formatElement("symbol", getNextToken()));
+        // subroutine body
         xml.append(compileSubroutineBody());
-        xml.append("</subroutineDec>\n");
+        
+        xml.append(closeTag("subroutineDec"));
         return xml.toString();
     }
 
     public String compileParameterList() {
-        StringBuilder xml = new StringBuilder("<parameterList>\n\t");
-        if(peek().equals(")")){
-            return xml.append("</parameterList>\n\t").toString();
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("parameterList"));
+        
+        if(!peek().equals(")")){
+            xml.append(pushType());
+            xml.append(formatElement("identifier", getNextToken()));
+            
+            while(peek().equals(",")){
+                xml.append(formatElement("symbol", getNextToken()));
+                xml.append(pushType());
+                xml.append(formatElement("identifier", getNextToken()));
+            }
         }
-        pushType(xml);
-        xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
-        while(peek().equals(",")){
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            xml = pushType(xml);
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
-        }
-        xml.append("</parameterList>\n\t").toString();
-       return xml.toString();
+        
+        xml.append(closeTag("parameterList"));
+        return xml.toString();
     }
-    public StringBuilder pushType(StringBuilder xml){
+    
+    public String pushType(){
         if(JackConstants.isKeyword(peek())){
-            xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        }else{
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+            return formatElement("keyword", getNextToken());
+        } else {
+            return formatElement("identifier", getNextToken());
         }
-        return xml;
     }
+    
     public String compileSubroutineBody() {
-        //{
-        StringBuilder xml = new StringBuilder("<subroutineBody>\n\t<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        System.out.println("==== starting with variables ====");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("subroutineBody"));
+        
+        // {
+        xml.append(formatElement("symbol", getNextToken()));
+        
+        // variable declarations
         while(peek().equals("var")){
             xml.append(compileVarDec());
         }
-        System.out.println("==== Now onto statements ====");
+        
+        // statements
         xml.append(compileStatements());
-        //}
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        xml.append("</subroutineBody>\n");
+        
+        // }
+        xml.append(formatElement("symbol", getNextToken()));
+        xml.append(closeTag("subroutineBody"));
         return xml.toString();
     }
 
     public String compileVarDec() {
-
-        StringBuilder xml = new StringBuilder("<varDec>\n\t");
-        //var
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        //first var type a
-        xml = pushType(xml);
-        xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
-        //, var b, var c
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("varDec"));
+        
+        // var
+        xml.append(formatElement("keyword", getNextToken()));
+        // type
+        xml.append(pushType());
+        // varName
+        xml.append(formatElement("identifier", getNextToken()));
+        
+        // (, varName)*
         while(peek().equals(",")){
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+            xml.append(formatElement("symbol", getNextToken()));
+            xml.append(formatElement("identifier", getNextToken()));
         }
-        //;
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n");
-        //close
-        xml.append("</varDec>\n\t");
+        
+        // ;
+        xml.append(formatElement("symbol", getNextToken()));
+        xml.append(closeTag("varDec"));
         return xml.toString();
     }
 
     public String compileStatements() {
-         if(peek().equals("}")){
-             return "";
-         }
-         StringBuilder xml = new StringBuilder("<statements>\n\t");
-         while(!peek().equals("}")){
-             System.out.println("=== Another statement ====\n"+ peek());
-             switch(peek()){
-                 case "let":
-                     System.out.println("Compiling letstatement:"+ peek());
-                     xml.append(compileLetStatement());
-                     break;
-                 case "if":
-                     System.out.println("Compiling ifstatement:"+ peek());
-                     xml.append(compileIfOrWhileStatement());
-                     break;
-                 case "while":
-                     System.out.println("Compiling whileStatement:"+ peek());
-                     xml.append(compileIfOrWhileStatement());
-                     break;
-                 case "do":
-                     System.out.println("Compiling dostatement:"+ peek());
-                     xml.append(compileDoStatement());
-                     break;
-                 case "return":
-                     System.out.println("Compiling returnstatement:"+ peek());
-                     xml.append(compileReturnStatement());
-                     break;
-                 default:
-                     System.out.println("This is not handled for some reason:"+peek());
-                     throw new RuntimeException("My bad will handle statement type in future!");
-             }
-         }
-         xml.append("</statements>\n");
-         return xml.toString();
-    }
-
-    public String compileLetStatement(){
-        //let varName [expression]? = expression ;
-        StringBuilder xml = new StringBuilder("<letStatement>\n\t");
-        //let
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        //varName
-        xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
-        //[expression]?
-        if(peek().equals("[")){
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            xml.append(compileExpression());
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+        if(peek().equals("}")){
+            return "";
         }
-        //=
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        //expression
-        System.out.println("\n======Now compiling expression =====\n");
-        xml.append(compileExpression());
-        //;
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        xml.append("</letStatement>\n");
+        
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("statements"));
+        
+        while(!peek().equals("}")){
+            switch(peek()){
+                case "let":
+                    xml.append(compileLetStatement());
+                    break;
+                case "if":
+                    xml.append(compileIfStatement());
+                    break;
+                case "while":
+                    xml.append(compileWhileStatement());
+                    break;
+                case "do":
+                    xml.append(compileDoStatement());
+                    break;
+                case "return":
+                    xml.append(compileReturnStatement());
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected statement type: " + peek());
+            }
+        }
+        
+        xml.append(closeTag("statements"));
         return xml.toString();
     }
 
-    public  String compileIfOrWhileStatement(){
-        //if(expression){ statements }
-        boolean isIf= peek().equals("if");
-        StringBuilder xml = new StringBuilder(isIf ? "<ifStatement>\n\t":"<whileStatement>\n\t");
-        //if or while
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        //(
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        xml.append(compileExpression());
-        //)
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        //{
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        xml.append(compileStatements());
-        //}
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-
-        if(isIf && peek().equals("else")){
-            //else
-            xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-            //{
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            xml.append(compileStatements());
-            //}
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+    public String compileLetStatement(){
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("letStatement"));
+        
+        // let
+        xml.append(formatElement("keyword", getNextToken()));
+        // varName
+        xml.append(formatElement("identifier", getNextToken()));
+        
+        // [expression]?
+        if(peek().equals("[")){
+            xml.append(formatElement("symbol", getNextToken()));
+            xml.append(compileExpression());
+            xml.append(formatElement("symbol", getNextToken()));
         }
-        xml.append(isIf ? "</ifStatement>\n\t" : "<whileStatement>\n\t");
+        
+        // =
+        xml.append(formatElement("symbol", getNextToken()));
+        // expression
+        xml.append(compileExpression());
+        // ;
+        xml.append(formatElement("symbol", getNextToken()));
+        
+        xml.append(closeTag("letStatement"));
+        return xml.toString();
+    }
+
+    public String compileIfStatement(){
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("ifStatement"));
+        
+        // if
+        xml.append(formatElement("keyword", getNextToken()));
+        // (
+        xml.append(formatElement("symbol", getNextToken()));
+        // expression
+        xml.append(compileExpression());
+        // )
+        xml.append(formatElement("symbol", getNextToken()));
+        // {
+        xml.append(formatElement("symbol", getNextToken()));
+        // statements
+        xml.append(compileStatements());
+        // }
+        xml.append(formatElement("symbol", getNextToken()));
+
+        if(peek().equals("else")){
+            // else
+            xml.append(formatElement("keyword", getNextToken()));
+            // {
+            xml.append(formatElement("symbol", getNextToken()));
+            // statements
+            xml.append(compileStatements());
+            // }
+            xml.append(formatElement("symbol", getNextToken()));
+        }
+        
+        xml.append(closeTag("ifStatement"));
+        return xml.toString();
+    }
+    
+    public String compileWhileStatement(){
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("whileStatement"));
+        
+        // while
+        xml.append(formatElement("keyword", getNextToken()));
+        // (
+        xml.append(formatElement("symbol", getNextToken()));
+        // expression
+        xml.append(compileExpression());
+        // )
+        xml.append(formatElement("symbol", getNextToken()));
+        // {
+        xml.append(formatElement("symbol", getNextToken()));
+        // statements
+        xml.append(compileStatements());
+        // }
+        xml.append(formatElement("symbol", getNextToken()));
+        
+        xml.append(closeTag("whileStatement"));
         return xml.toString();
     }
 
     public String compileDoStatement(){
-        StringBuilder xml = new StringBuilder("<doStatement>\n\t");
-        //do
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        //subroutineName or className
-        xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("doStatement"));
+        
+        // do
+        xml.append(formatElement("keyword", getNextToken()));
+        // subroutineName or className
+        xml.append(formatElement("identifier", getNextToken()));
+        
         if(peek().equals(".")){
-            //.
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            //subroutineName
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+            // .
+            xml.append(formatElement("symbol", getNextToken()));
+            // subroutineName
+            xml.append(formatElement("identifier", getNextToken()));
         }
-        //(
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        //expressionList
-        if(peek().equals(")")){
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        }else{
-            xml.append(compileExpressionList());
-            //)
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        }
-        //;
-        xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        xml.append("</doStatement>\n");
+        
+        // (
+        xml.append(formatElement("symbol", getNextToken()));
+        // expressionList
+        xml.append(compileExpressionList());
+        // )
+        xml.append(formatElement("symbol", getNextToken()));
+        // ;
+        xml.append(formatElement("symbol", getNextToken()));
+        
+        xml.append(closeTag("doStatement"));
         return xml.toString();
     }
 
     public String compileReturnStatement(){
-        StringBuilder xml = new StringBuilder("<returnStatement>\n\t");
-        //return
-        xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        if(peek().equals(";")){
-            //;
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        }else{
-            System.out.println(" ===== \nexpression handling in return statement \n ======");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("returnStatement"));
+        
+        // return
+        xml.append(formatElement("keyword", getNextToken()));
+        
+        if(!peek().equals(";")){
             xml.append(compileExpression());
-            //;
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
         }
-        xml.append("</returnStatement>\n");
+        
+        // ;
+        xml.append(formatElement("symbol", getNextToken()));
+        xml.append(closeTag("returnStatement"));
         return xml.toString();
     }
-   //* : zero or many
+
     public String compileExpression(){
-        //term ( op term)*
-        StringBuilder xml = new StringBuilder("<expression>\n\t");
-        //term
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("expression"));
+        
+        // term
         xml.append(compileTerm());
+        
         while(JackConstants.isOperator(peek())){
-            //op
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+            // op
+            xml.append(formatElement("symbol", getNextToken()));
             xml.append(compileTerm());
         }
-        xml.append("</expression>\n\t");
+        
+        xml.append(closeTag("expression"));
         return xml.toString();
     }
 
     public String compileTerm(){
-        System.out.println(" ====== \ncompiling term in progress \n ======" + peek());
-        StringBuilder xml = new StringBuilder("<term>\n\t");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("term"));
+        
         if(peekToken().getTokenType() == TokenType.NUMBER_CONSTANT){
-            xml.append("<integerConstant>").append(getNextToken()).append("</integerConstant>\n\t");
-        }else if(peekToken().getTokenType() == TokenType.STRING_CONSTANT){
-            xml.append("<stringConstant>").append(getNextToken()).append("</stringConstant>\n\t");
-        }else if(peekToken().getTokenType() == TokenType.KEYWORD){
-            xml.append("<keyword>").append(getNextToken()).append("</keyword>\n\t");
-        }else if(peekToken().getTokenType() == TokenType.IDENTIFIER){
-            //we have cases here: identifier, identifier[expression], identifier(expressionList), identifier.identifier(expressionList)
-            xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
+            xml.append(formatElement("integerConstant", getNextToken()));
+        } else if(peekToken().getTokenType() == TokenType.STRING_CONSTANT){
+            xml.append(formatElement("stringConstant", getNextToken()));
+        } else if(peekToken().getTokenType() == TokenType.KEYWORD){
+            xml.append(formatElement("keyword", getNextToken()));
+        } else if(peekToken().getTokenType() == TokenType.IDENTIFIER){
+            // identifier cases: identifier, identifier[expression], identifier(expressionList), identifier.identifier(expressionList)
+            xml.append(formatElement("identifier", getNextToken()));
+            
             if(peek().equals("[")){
-                //[
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+                // [
+                xml.append(formatElement("symbol", getNextToken()));
                 xml.append(compileExpression());
-                //]
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            }else if(peek().equals("(")){
-                //(
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+                // ]
+                xml.append(formatElement("symbol", getNextToken()));
+            } else if(peek().equals("(")){
+                // (
+                xml.append(formatElement("symbol", getNextToken()));
                 xml.append(compileExpressionList());
-                //)
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-            }else if(peek().equals(".")){
-                //.
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-                xml.append("<identifier>").append(getNextToken()).append("</identifier>\n\t");
-                //(
-                xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-                if(peek().equals(")")){
-                    xml.append("<expressionList></expressionList>\n\t");
-                    //)
-                    xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-                }else {
-                    xml.append(compileExpressionList());
-                    //)
-                    xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-                }
+                // )
+                xml.append(formatElement("symbol", getNextToken()));
+            } else if(peek().equals(".")){
+                // .
+                xml.append(formatElement("symbol", getNextToken()));
+                xml.append(formatElement("identifier", getNextToken()));
+                // (
+                xml.append(formatElement("symbol", getNextToken()));
+                xml.append(compileExpressionList());
+                // )
+                xml.append(formatElement("symbol", getNextToken()));
             }
-        }else if(Objects.equals(peekToken().getToken(), "-") || Objects.equals(peekToken().getToken(), "~")){
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+        } else if(Objects.equals(peekToken().getToken(), "-") || Objects.equals(peekToken().getToken(), "~")){
+            // unary operators
+            xml.append(formatElement("symbol", getNextToken()));
             xml.append(compileTerm());
-        }else if(peek().equals("(")){
-            //)
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+        } else if(peek().equals("(")){
+            // (
+            xml.append(formatElement("symbol", getNextToken()));
             xml.append(compileExpression());
-            //)
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
-        } else{
-            throw new RuntimeException("My bad will handle expression's syntax token in future!");
+            // )
+            xml.append(formatElement("symbol", getNextToken()));
+        } else {
+            throw new RuntimeException("Unexpected token in term: " + peek());
         }
-        xml.append("</term>\n\t");
+        
+        xml.append(closeTag("term"));
         return xml.toString();
     }
 
     public String compileExpressionList(){
-        StringBuilder xml = new StringBuilder("<expressionList>\n\t");
-        xml.append(compileExpression());
-         while (peek().equals(",")){
-            //,
-            xml.append("<symbol>").append(getNextToken()).append("</symbol>\n\t");
+        StringBuilder xml = new StringBuilder();
+        xml.append(openTag("expressionList"));
+        
+        if(!peek().equals(")")){
             xml.append(compileExpression());
-        };
-        xml.append("</expressionList>\n\t");
+            
+            while (peek().equals(",")){
+                // ,
+                xml.append(formatElement("symbol", getNextToken()));
+                xml.append(compileExpression());
+            }
+        }
+        
+        xml.append(closeTag("expressionList"));
         return xml.toString();
     }
 }
-
