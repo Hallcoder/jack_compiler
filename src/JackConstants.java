@@ -5,6 +5,7 @@ public class JackConstants {
     private static final List<String> symbols = Arrays.asList(
             "{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"
     );
+    private static final List<String> operators = Arrays.asList("+","-","/","*","&gt;","&lt;","&amp;","|","=");
 
     private static final List<String> keywords = Arrays.asList(
             "class", "constructor", "function", "method", "field", "static", "var", "int", "char", "boolean",
@@ -20,7 +21,12 @@ public class JackConstants {
     public static boolean isSymbol(String symbol){
         return symbols.contains(symbol);
     }
+
     public static boolean isKeyword(String keyword){
         return keywords.contains(keyword);
+    }
+
+    public static boolean isOperator(String operator){
+        return operators.contains(operator);
     }
 }

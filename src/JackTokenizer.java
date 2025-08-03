@@ -3,6 +3,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JackTokenizer {
     private int currentPosition = 0;
@@ -21,57 +22,72 @@ public class JackTokenizer {
     }
 
     public void tokenize() {
-        try{
-            Files.lines(inputFile).forEach((line)->{
+        AtomicBoolean insideComment = new AtomicBoolean(false);
+        try {
+            Files.lines(inputFile).forEach((line) -> {
                 currentLineContent = line;
                 resetPosition();
-//                System.out.println("Tokenize line: " + line);
-//                System.out.println(currentPosition);
-                while(currentPosition < currentLineContent.length()) {
-                    char  currentChar = line.charAt(currentPosition);
+
+                // Remove single-line and multi-line comments
+                // Handle multi-line comment start or continuation
+                if (insideComment.get()) {
+                    if (line.contains("*/")) {
+                        insideComment.set(false);
+                        currentLineContent = line.substring(line.indexOf("*/") + 2); // continue after comment
+                        resetPosition();
+                    } else {
+                        // Entire line is in a comment block
+                        return;
+                    }
+                }
+
+                // Remove single-line comments
+                if (currentLineContent.contains("//")) {
+                    currentLineContent = currentLineContent.substring(0, currentLineContent.indexOf("//"));
+                }
+
+                // Start of a multi-line comment
+                if (currentLineContent.contains("/*")) {
+                    int startIdx = currentLineContent.indexOf("/*");
+                    int endIdx = currentLineContent.indexOf("*/", startIdx + 2);
+
+                    if (endIdx != -1) {
+                        // Both /* and */ on same line
+                        currentLineContent = currentLineContent.substring(0, startIdx) +
+                                currentLineContent.substring(endIdx + 2);
+                    } else {
+                        insideComment.set(true);
+                        currentLineContent = currentLineContent.substring(0, startIdx);
+                    }
+                }
+
+                // Continue if there's nothing left to tokenize
+                if (currentLineContent.trim().isEmpty()) return;
+
+                while (currentPosition < currentLineContent.length()) {
+                    char currentChar = currentLineContent.charAt(currentPosition);
                     switch (currentChar) {
                         case '\n':
-//                            System.out.println("Char now is new line:" + currentChar);
                             nextLine();
                             break;
                         case '\r':
                         case '\t':
                         case ' ':
-//                            System.out.println("Char now is space like:" + currentChar);
                             advance();
                             break;
                         case '"':
-//                            System.out.println("Char now is start of string:" + currentChar);
                             scanString();
                             break;
-                        // JACK symbols
-                        case '{':
-                        case '}':
-                        case '(':
-                        case ')':
-                        case '[':
-                        case ']':
-                        case '.':
-                        case ',':
-                        case ';':
-                        case '+':
-                        case '-':
-                        case '*':
-                        case '/':
-                        case '&':
-                        case '|':
-                        case '<':
-                        case '>':
-                        case '=':
+                        case '{': case '}': case '(': case ')': case '[': case ']':
+                        case '.': case ',': case ';': case '+': case '-': case '*':
+                        case '/': case '&': case '|': case '<': case '>': case '=':
                         case '~':
-//                            System.out.println("Char now is symbol:" + currentChar);
                             advance();
                             scanSymbol();
                             break;
                         default:
-//                            System.out.println("Char now is either number, keyword or identifier:" + currentChar);
                             if (Character.isLetter(currentChar) || currentChar == '_') {
-                                scanKeywordOrIdentifier(); // Use keyword as placeholder but the logic will help differentiate
+                                scanKeywordOrIdentifier();
                             } else if (Character.isDigit(currentChar)) {
                                 scanNumber();
                             } else {
@@ -79,13 +95,13 @@ public class JackTokenizer {
                             }
                     }
                 }
-
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
+
     private void advance(){
         currentPosition++;
 //        System.out.println("Advancing position: " + currentPosition);
@@ -165,6 +181,7 @@ public class JackTokenizer {
 //            System.out.println("appending character:"+c);
             advance();
         }
+        advance();
         tokens.add(new Token(TokenType.STRING_CONSTANT, tokenValue.toString(),JackConstants.starts_non_terminal(tokenValue.toString())));
     }
 

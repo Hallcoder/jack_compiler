@@ -31,13 +31,13 @@
 	<identifier>Game</identifier>
 	<identifier>new</identifier>
 	<symbol>(</symbol>
-<paramaterList>
+<parameterList>
 	<identifier>Ball</identifier>
 	<identifier>ballY</identifier>
 	<symbol>,</symbol>
 	<identifier>Line_board</identifier>
 	<identifier>lineX</identifier>
-	</paramaterList>
+	</parameterList>
 	<symbol>)</symbol>
 	<subroutineBody>
 	<symbol>{</symbol>
@@ -65,7 +65,7 @@
 	<symbol>;</symbol>
 	</letStatement>
 <returnStatement>
-	<identifier>return</identifier>
+	<keyword>return</keyword>
 	<expression>
 	<term>
 	<keyword>this</keyword>
@@ -82,14 +82,48 @@
 	<keyword>void</keyword>
 	<identifier>startGame</identifier>
 	<symbol>(</symbol>
-<paramaterList>
-	</paramaterList>
+<parameterList>
+	</parameterList>
 	<symbol>)</symbol>
 	<subroutineBody>
 	<symbol>{</symbol>
+	<varDec>
+	<keyword>var</keyword>
+	<keyword>int</keyword>
+	<identifier>a</identifier>
+	<symbol>;</symbol>
+</varDec>
+	<varDec>
+	<keyword>var</keyword>
+	<keyword>int</keyword>
+	<identifier>b</identifier>
+	<symbol>;</symbol>
+</varDec>
 	<statements>
-	<doStatement>
-	<identifier>do</identifier>
+	<letStatement>
+	<keyword>let</keyword>
+	<identifier>a</identifier>
+	<symbol>=</symbol>
+	<expression>
+	<term>
+	<integerConstant>4</integerConstant>
+	</term>
+	</expression>
+	<symbol>;</symbol>
+	</letStatement>
+<letStatement>
+	<keyword>let</keyword>
+	<identifier>b</identifier>
+	<symbol>=</symbol>
+	<expression>
+	<term>
+	<integerConstant>10</integerConstant>
+	</term>
+	</expression>
+	<symbol>;</symbol>
+	</letStatement>
+<doStatement>
+	<keyword>do</keyword>
 	<identifier>Output</identifier>
 	<symbol>.</symbol>
 	<identifier>moveCursor</identifier>
@@ -111,7 +145,7 @@
 	<symbol>;</symbol>
 	</doStatement>
 <doStatement>
-	<identifier>do</identifier>
+	<keyword>do</keyword>
 	<identifier>Output</identifier>
 	<symbol>.</symbol>
 	<identifier>printString</identifier>
@@ -127,7 +161,7 @@
 	<symbol>;</symbol>
 	</doStatement>
 <doStatement>
-	<identifier>do</identifier>
+	<keyword>do</keyword>
 	<identifier>ball</identifier>
 	<symbol>.</symbol>
 	<identifier>moveBall</identifier>
@@ -136,7 +170,7 @@
 	<symbol>;</symbol>
 	</doStatement>
 <returnStatement>
-	<identifier>return</identifier>
+	<keyword>return</keyword>
 	<symbol>;</symbol>
 	</returnStatement>
 </statements>
@@ -148,14 +182,14 @@
 	<keyword>void</keyword>
 	<identifier>writeScore</identifier>
 	<symbol>(</symbol>
-<paramaterList>
-	</paramaterList>
+<parameterList>
+	</parameterList>
 	<symbol>)</symbol>
 	<subroutineBody>
 	<symbol>{</symbol>
 	<statements>
 	<returnStatement>
-	<identifier>return</identifier>
+	<keyword>return</keyword>
 	<symbol>;</symbol>
 	</returnStatement>
 </statements>

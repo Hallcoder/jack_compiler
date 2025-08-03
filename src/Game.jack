@@ -1,3 +1,10 @@
+/*
+testing comments shit
+*/
+
+//tHIS TOO
+/* SADFAD */
+
 class Game{
     field Ball ball;
     field Line_board board;
@@ -10,6 +17,10 @@ class Game{
     }
 
     method void startGame(){
+        var int a;
+        var int b;
+        let a =4;
+        let b = 10;
         do Output.moveCursor(0,0);
         do Output.printString("Score: 0");
         do ball.moveBall();
